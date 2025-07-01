@@ -12,6 +12,9 @@ node_modules/
 # Environment variables
 .env
 
+# Cursor MCP configuration with API keys (keep .cursor/mcp.json.example)
+.cursor/mcp.json
+
 # Editor directories and files
 .idea
 .vscode
