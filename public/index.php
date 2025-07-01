@@ -51,24 +51,82 @@ try {
 $classes = [];
 try {
     $stmt = $pdo->query("
-        SELECT c.id, c.name, c.description, c.time, c.capacity, c.recurring,
-               CONCAT(i.first_name, ' ', i.last_name) as instructor_name,
-               i.email as instructor_email,
-               CASE 
-                   WHEN c.recurring = 1 THEN 'Weekly'
-                   ELSE DATE_FORMAT(c.date, '%M %e, %Y')
-               END as schedule_info,
-               c.date as original_date
+        SELECT 
+            CASE 
+                WHEN c.name LIKE 'Private 1-1%' THEN 'Private 1-1 Tuition'
+                WHEN c.name LIKE 'Adult Advanced%' THEN 'Adult Advanced'
+                WHEN c.name LIKE 'Adult Fundamentals%' THEN 'Adult Fundamentals'
+                WHEN c.name LIKE 'Adults Any Level%' THEN 'Adults Any Level'
+                WHEN c.name LIKE 'Adults Bag Work%' THEN 'Adults Bag Work / Open Mat'
+                WHEN c.name LIKE 'Adults Sparring%' THEN 'Adults Sparring'
+                WHEN c.name LIKE 'Infants%' THEN 'Infants'
+                WHEN c.name LIKE 'Juniors%' THEN 'Juniors'
+                WHEN c.name LIKE 'Seniors%' THEN 'Seniors'
+                ELSE c.name
+            END as unique_name,
+            c.description, 
+            c.capacity, 
+            c.age_min, 
+            c.age_max, 
+            c.trial_eligible,
+            c.difficulty_level,
+            CONCAT(i.first_name, ' ', i.last_name) as instructor_name,
+            i.email as instructor_email
         FROM classes c 
         LEFT JOIN instructors i ON c.instructor_id = i.id 
-        ORDER BY c.name, c.time
+        WHERE c.recurring = 1
+        GROUP BY unique_name
+        ORDER BY 
+            CASE unique_name
+                WHEN 'Private 1-1 Tuition' THEN 1
+                WHEN 'Infants' THEN 2
+                WHEN 'Juniors' THEN 3
+                WHEN 'Seniors' THEN 4
+                WHEN 'Adult Fundamentals' THEN 5
+                WHEN 'Adults Any Level' THEN 6
+                WHEN 'Adult Advanced' THEN 7
+                WHEN 'Adults Bag Work / Open Mat' THEN 8
+                WHEN 'Adults Sparring' THEN 9
+                ELSE 10
+            END
     ");
     $classes = $stmt->fetchAll();
     
-    // Add general availability info (not specific to dates for recurring classes)
+    // Function to get class image filename
+    function getClassImageName($className) {
+        $imageMap = [
+            'Private 1-1 Tuition' => 'private-tuition.jpg',
+            'Adult Advanced' => 'adult-advanced.jpg',
+            'Adult Fundamentals' => 'adult-fundamentals.jpg',
+            'Adults Any Level' => 'adults-any-level.jpg',
+            'Adults Bag Work / Open Mat' => 'adults-bag-work.jpg',
+            'Adults Sparring' => 'adults-sparring.jpg',
+            'Infants' => 'infants.jpg',
+            'Juniors' => 'juniors.jpg',
+            'Seniors' => 'seniors.jpg'
+        ];
+        return $imageMap[$className] ?? 'default-class.jpg';
+    }
+    
+    // Add image information and age group display
     foreach ($classes as &$class) {
-        $class['booked_count'] = 0; // General info, not specific bookings
-        $class['available_spots'] = $class['capacity']; // Show full capacity
+        $class['image_filename'] = getClassImageName($class['unique_name']);
+        $class['name'] = $class['unique_name']; // Use the cleaned unique name
+        
+        // Format age range display
+        if ($class['age_min'] && $class['age_max']) {
+            if ($class['age_max'] == 99) {
+                $class['age_display'] = $class['age_min'] . '+ years';
+            } else {
+                $class['age_display'] = $class['age_min'] . '-' . $class['age_max'] . ' years';
+            }
+        } else {
+            $class['age_display'] = 'All ages';
+        }
+        
+        // Add trial eligibility text
+        $class['trial_text'] = $class['trial_eligible'] ? 'Trial Available' : 'No Trial Available';
+        $class['trial_class'] = $class['trial_eligible'] ? 'text-success' : 'text-warning';
     }
     
 } catch (PDOException $e) {
@@ -375,7 +433,10 @@ $content .= <<<HTML
 <!-- Available Classes Section -->
 <div class="row mb-5" id="classes">
     <div class="col-12">
-        <h2><i class="fas fa-calendar-alt me-2"></i>Available Classes</h2>
+        <div class="text-center mb-4">
+            <h2><i class="fas fa-fist-raised me-2"></i>Available Classes</h2>
+            <p class="text-muted">Discover our range of Krav Maga classes designed for all ages and skill levels. Check the timetable below for schedules and frequencies.</p>
+        </div>
         <div class="row">
 HTML;
 
@@ -391,21 +452,58 @@ HTML;
     foreach ($classes as $class) {
         $instructorText = !empty($class['instructor_name']) ? $class['instructor_name'] : 'TBA';
         
+        // Check if class image exists, otherwise use placeholder
+        $imagePath = "assets/images/classes/{$class['image_filename']}";
+        $imageExists = file_exists(__DIR__ . '/' . $imagePath);
+        
+        if (!$imageExists) {
+            // Create a CSS-based placeholder with class name
+            $imageHtml = <<<HTML
+<div class="class-image-placeholder d-flex align-items-center justify-content-center text-white fw-bold" 
+     style="height: 200px; background: linear-gradient(45deg, #007bff, #0056b3); font-size: 1.1rem; text-align: center;">
+    <div>
+        <i class="fas fa-fist-raised fa-2x mb-2"></i><br>
+        {$class['name']}
+    </div>
+</div>
+HTML;
+        } else {
+            $imageHtml = <<<HTML
+<img src="{$imagePath}" class="card-img-top" alt="{$class['name']}" style="height: 200px; object-fit: cover;">
+HTML;
+        }
+        
         $content .= <<<HTML
-            <div class="col-md-6 col-lg-4 mb-3">
-                <div class="card h-100">
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    {$imageHtml}
                     <div class="card-body">
-                        <h5 class="card-title">{$class['name']}</h5>
-                        <p class="card-text">{$class['description']}</p>
-                        <div class="mt-3">
-                            <p class="mb-2">
-                                <i class="fas fa-user-tie me-2"></i>
-                                <strong>Instructor:</strong> {$instructorText}
-                            </p>
-                            <p class="mb-0">
-                                <i class="fas fa-users me-2"></i>
-                                <strong>Capacity:</strong> {$class['capacity']}
-                            </p>
+                        <h5 class="card-title text-primary">{$class['name']}</h5>
+                        <p class="card-text text-muted small">{$class['description']}</p>
+                        
+                        <div class="class-details mt-3">
+                            <div class="row text-center mb-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Age Range</small>
+                                    <span class="badge bg-info">{$class['age_display']}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Capacity</small>
+                                    <span class="badge bg-secondary">{$class['capacity']} max</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mb-2">
+                                <small class="text-muted d-block">Instructor</small>
+                                <strong class="text-dark">{$instructorText}</strong>
+                            </div>
+                            
+                            <div class="text-center">
+                                <span class="badge {$class['trial_class']} px-3 py-2">
+                                    <i class="fas fa-graduation-cap me-1"></i>
+                                    {$class['trial_text']}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
