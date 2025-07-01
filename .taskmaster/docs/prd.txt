@@ -1,0 +1,27 @@
+Simple Class Booking System
+
+Overview:
+A web-based booking system that allows users to view available classes on a calendar, book classes, and allows an admin to manage the class schedule (add, edit, remove classes).
+
+Features:
+
+User Features:
+- View a calendar with all available classes.
+- Click on a class to see details (time, description, available spots).
+- Book a class by submitting a form (name, email, etc.).
+- See a confirmation after booking.
+- (Optional) View their upcoming bookings (if email is provided).
+
+Admin Features:
+- Admin login page (simple password protection).
+- Add new classes (date, time, description, capacity).
+- Edit or remove existing classes.
+- View all bookings for each class.
+
+Technical Requirements:
+- Frontend: HTML, CSS, JavaScript (no frameworks).
+- Calendar: Integrate a simple JS calendar library (e.g., FullCalendar or similar).
+- Backend: PHP (handle class data, bookings, admin actions).
+- Database: SQLite or MySQL (store classes, bookings, admin credentials).
+- Security: Basic input validation and admin authentication.
+- Deployment: Should work on standard PHP hosting. 

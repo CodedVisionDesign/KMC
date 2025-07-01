@@ -1,0 +1,24 @@
+# Class Booking System - Environment Configuration
+# Copy this file to 'environment.php' and update the values for your environment
+
+<?php
+// Application Environment
+// Set to 'production' for live sites, 'development' for local development
+define('APP_ENV', 'development');
+
+// Security Settings
+define('SESSION_LIFETIME', 3600);
+define('CSRF_TOKEN_LIFETIME', 3600);
+
+// Error Logging Configuration
+define('LOG_ERRORS', true);
+define('ERROR_LOG_FILE', __DIR__ . '/../logs/error.log');
+
+// Email Configuration (for future features)
+// define('SMTP_HOST', '');
+// define('SMTP_PORT', 587);
+// define('SMTP_USER', '');
+// define('SMTP_PASS', '');
+// define('FROM_EMAIL', 'noreply@yourdomain.com');
+// define('FROM_NAME', 'Class Booking System');
+?> 

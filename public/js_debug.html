@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>JavaScript Debug Test</h1>
+
+    <div id="status"></div>
+
+    <button onclick="testJSVariables()">Test JS Variables</button>
+    <button onclick="testUserBookingsAPI()">Test User Bookings API</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <div id="results"></div>
+
+    <script>
+        let resultDiv = document.getElementById('results');
+        let statusDiv = document.getElementById('status');
+
+        function log(message, type = 'info') {
+            console.log(message);
+            let div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            resultDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            resultDiv.innerHTML = '';
+            statusDiv.innerHTML = '';
+        }
+
+        function testJSVariables() {
+            log('Testing JavaScript Variables...', 'info');
+
+            // Check if variables exist
+            if (typeof window.userLoggedIn !== 'undefined') {
+                log(`✅ window.userLoggedIn = ${window.userLoggedIn}`, 'success');
+            } else {
+                log('❌ window.userLoggedIn is undefined', 'error');
+            }
+
+            if (typeof window.userId !== 'undefined') {
+                log(`✅ window.userId = ${window.userId}`, 'success');
+            } else {
+                log('❌ window.userId is undefined', 'error');
+            }
+
+            if (typeof window.userName !== 'undefined') {
+                log(`✅ window.userName = "${window.userName}"`, 'success');
+            } else {
+                log('❌ window.userName is undefined', 'error');
+            }
+
+            if (typeof window.userBookedClasses !== 'undefined') {
+                log(`✅ window.userBookedClasses = [${window.userBookedClasses.join(', ')}]`, 'success');
+            } else {
+                log('❌ window.userBookedClasses is undefined', 'error');
+            }
+
+            if (typeof window.userBookingsLoaded !== 'undefined') {
+                log(`✅ window.userBookingsLoaded = ${window.userBookingsLoaded}`, 'success');
+            } else {
+                log('❌ window.userBookingsLoaded is undefined', 'error');
+            }
+        }
+
+        async function testUserBookingsAPI() {
+            log('Testing User Bookings API...', 'info');
+
+            try {
+                let response = await fetch('api/user_bookings.php');
+                log(`API Response Status: ${response.status} ${response.statusText}`,
+                    response.ok ? 'success' : 'error');
+
+                let data = await response.json();
+                log('API Response Data:', 'info');
+
+                let pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(data, null, 2);
+                resultDiv.appendChild(pre);
+
+                if (data.success) {
+                    log(`✅ API Success: Found ${data.booked_class_ids.length} bookings`, 'success');
+                } else {
+                    log(`❌ API Error: ${data.message}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ API Call Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            log('Page loaded, running auto-tests...', 'info');
+            setTimeout(() => {
+                testJSVariables();
+            }, 100);
+        });
+    </script>
+</body>
+
+</html>

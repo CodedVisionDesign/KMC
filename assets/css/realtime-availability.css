@@ -1,0 +1,241 @@
+/**
+ * Real-time Class Availability Styles
+ * Styles for AJAX updates, availability indicators, and spots remaining display
+ */
+
+/* Availability Controls */
+.availability-controls {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.availability-controls .btn-outline-primary {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.availability-controls .btn-outline-primary:hover {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
+
+.availability-controls .form-check-input:checked {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+/* Progress Bar for Loading */
+#refreshProgress {
+  transition: all 0.3s ease;
+}
+
+#refreshProgress .progress-bar {
+  background-color: #007bff;
+  transition: width 0.3s ease;
+}
+
+/* Availability Status Classes */
+.availability-available {
+  color: #28a745 !important;
+}
+
+.availability-low {
+  color: #ffc107 !important;
+}
+
+.availability-full {
+  color: #dc3545 !important;
+}
+
+/* Spots Remaining Display */
+.spots-remaining {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spots-remaining i {
+  width: 16px;
+  text-align: center;
+}
+
+.capacity-info {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* Availability Indicators */
+.availability-indicator {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.availability-indicator:hover {
+  transform: scale(1.2);
+}
+
+/* Class Card Enhancements */
+.class-card {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.class-card.availability-full {
+  opacity: 0.7;
+}
+
+.class-card.availability-full .card-body {
+  background-color: #f8f9fa;
+}
+
+.class-card.availability-low {
+  border-color: #ffc107;
+}
+
+.class-card.availability-available {
+  border-color: #28a745;
+}
+
+/* Button States */
+.btn-book:disabled,
+.book-class-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-book.btn-secondary,
+.book-class-btn.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+/* Loading States */
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Alert Enhancements */
+#availability-error {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Calendar View Enhancements */
+.fc-event.availability-full {
+  background-color: #dc3545 !important;
+  border-color: #dc3545 !important;
+}
+
+.fc-event.availability-low {
+  background-color: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #000 !important;
+}
+
+.fc-event.availability-available {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .availability-controls .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .availability-controls .form-check {
+    align-self: flex-start;
+  }
+
+  .spots-remaining {
+    font-size: 0.8rem;
+  }
+
+  .availability-indicator {
+    width: 10px;
+    height: 10px;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .availability-controls {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  .class-card.availability-full .card-body {
+    background-color: #2d3748;
+  }
+
+  .availability-indicator {
+    box-shadow: 0 0 0 2px #2d3748, 0 0 0 3px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Animation for Real-time Updates */
+.class-card.updating {
+  animation: pulse 1s ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Tooltip Enhancements */
+.availability-indicator[title] {
+  cursor: help;
+}
+
+/* Focus States for Accessibility */
+.availability-controls button:focus,
+.availability-controls input:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Text Selection Prevention for Indicators */
+.availability-indicator {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}

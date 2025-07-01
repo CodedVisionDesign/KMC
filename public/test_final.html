@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Final Test - Class Booking System</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>Final Test - Class Booking System</h1>
+
+      <div class="row mb-3">
+        <div class="col-12">
+          <button id="testAPI" class="btn btn-primary">Test API</button>
+          <button id="clearCalendar" class="btn btn-secondary">
+            Clear Calendar
+          </button>
+          <button id="loadCalendar" class="btn btn-success">
+            Load Calendar
+          </button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-8">
+          <h3>Calendar</h3>
+          <div id="calendar"></div>
+        </div>
+        <div class="col-md-4">
+          <h3>Debug Info</h3>
+          <div id="debug" class="alert alert-light">
+            <p>Ready for testing...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      let calendar;
+      const debug = document.getElementById("debug");
+
+      function log(message) {
+        console.log(message);
+        debug.innerHTML +=
+          "<p>" + new Date().toLocaleTimeString() + ": " + message + "</p>";
+      }
+
+      // Initialize calendar
+      document.addEventListener("DOMContentLoaded", function () {
+        const calendarEl = document.getElementById("calendar");
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: "dayGridMonth",
+          headerToolbar: {
+            left: "prev,next today",
+            center: "title",
+            right: "dayGridMonth,timeGridWeek",
+          },
+          events: [],
+          eventClick: function (info) {
+            log("Clicked on class: " + info.event.title);
+            alert(
+              "Clicked on: " +
+                info.event.title +
+                "\nTime: " +
+                info.event.start.toLocaleString()
+            );
+          },
+        });
+        calendar.render();
+        log("Calendar initialized");
+      });
+
+      // Test API button
+      document.getElementById("testAPI").addEventListener("click", function () {
+        log("Testing API...");
+        fetch("api/classes.php")
+          .then((res) => {
+            log("API Response status: " + res.status);
+            return res.json();
+          })
+          .then((data) => {
+            log("API Response: " + JSON.stringify(data, null, 2));
+            if (data.success && data.classes) {
+              log("Found " + data.classes.length + " classes");
+            }
+          })
+          .catch((err) => {
+            log("API Error: " + err.message);
+          });
+      });
+
+      // Load calendar button
+      document
+        .getElementById("loadCalendar")
+        .addEventListener("click", function () {
+          log("Loading calendar events...");
+          fetch("api/classes.php")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success && data.classes) {
+                const events = data.classes.map((cls) => ({
+                  id: cls.id,
+                  title: cls.name,
+                  start: cls.date + "T" + cls.time,
+                  description: cls.description,
+                  extendedProps: {
+                    capacity: cls.capacity,
+                    classData: cls,
+                  },
+                }));
+
+                calendar.removeAllEvents();
+                events.forEach((event) => calendar.addEvent(event));
+                log("Loaded " + events.length + " events to calendar");
+              }
+            })
+            .catch((err) => {
+              log("Calendar load error: " + err.message);
+            });
+        });
+
+      // Clear calendar button
+      document
+        .getElementById("clearCalendar")
+        .addEventListener("click", function () {
+          calendar.removeAllEvents();
+          log("Calendar cleared");
+        });
+    </script>
+  </body>
+</html>

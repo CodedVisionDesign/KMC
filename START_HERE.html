@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Class Booking System - Setup & Test</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+      .card {
+        margin-bottom: 20px;
+      }
+      .step-number {
+        background: #007bff;
+        color: white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+      }
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+      }
+      .status-pending {
+        background-color: #ffc107;
+      }
+      .status-success {
+        background-color: #28a745;
+      }
+      .status-error {
+        background-color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8 mx-auto">
+          <div class="card">
+            <div class="card-header bg-primary text-white">
+              <h1 class="mb-0">🎯 Class Booking System - Quick Start</h1>
+            </div>
+            <div class="card-body">
+              <p class="lead">
+                Welcome! Let's get your Class Booking System up and running in
+                just a few steps.
+              </p>
+
+              <div class="alert alert-info">
+                <strong>📋 Prerequisites:</strong> Make sure XAMPP is installed
+                and both Apache and MySQL services are running.
+              </div>
+
+              <h3>🚀 Setup Steps</h3>
+
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5><span class="step-number">1</span>Database Setup</h5>
+                  <p>First, we need to create the database and sample data:</p>
+                  <a
+                    href="setup_database.php"
+                    class="btn btn-primary"
+                    target="_blank"
+                  >
+                    🗄️ Setup Database
+                  </a>
+                  <small class="text-muted d-block mt-2"
+                    >This will create the database, tables, and sample
+                    data.</small
+                  >
+                </div>
+              </div>
+
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5><span class="step-number">2</span>System Tests</h5>
+                  <p>
+                    Run comprehensive tests to verify everything is working:
+                  </p>
+                  <a href="test.php" class="btn btn-success" target="_blank">
+                    🧪 Run System Tests
+                  </a>
+                  <small class="text-muted d-block mt-2"
+                    >Checks PHP version, database connection, API endpoints, and
+                    more.</small
+                  >
+                </div>
+              </div>
+
+              <div class="card mb-3">
+                <div class="card-body">
+                  <h5>
+                    <span class="step-number">3</span>Test the Application
+                  </h5>
+                  <p>Try out both the user and admin interfaces:</p>
+                  <div class="d-grid gap-2 d-md-flex">
+                    <a
+                      href="public/index.php"
+                      class="btn btn-outline-primary"
+                      target="_blank"
+                    >
+                      👥 User Interface
+                    </a>
+                    <a
+                      href="admin/login.php"
+                      class="btn btn-outline-secondary"
+                      target="_blank"
+                    >
+                      🔐 Admin Panel
+                    </a>
+                  </div>
+                  <small class="text-muted d-block mt-2">
+                    <strong>Admin Login:</strong> username: <code>admin</code>,
+                    password: <code>admin123</code>
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>🔗 Quick Access Links</h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h5>User Features</h5>
+                  <ul class="list-unstyled">
+                    <li>
+                      <a href="public/index.php" target="_blank"
+                        >📅 Main Calendar</a
+                      >
+                    </li>
+                    <li>
+                      <a href="public/api/classes.php" target="_blank"
+                        >📋 Classes API</a
+                      >
+                    </li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h5>Admin Features</h5>
+                  <ul class="list-unstyled">
+                    <li>
+                      <a href="admin/login.php" target="_blank"
+                        >🔐 Admin Login</a
+                      >
+                    </li>
+                    <li>
+                      <a href="admin/dashboard.php" target="_blank"
+                        >📊 Dashboard</a
+                      >
+                    </li>
+                    <li>
+                      <a href="admin/classes.php" target="_blank"
+                        >📚 Manage Classes</a
+                      >
+                    </li>
+                    <li>
+                      <a href="admin/bookings.php" target="_blank"
+                        >📝 View Bookings</a
+                      >
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>📖 System Information</h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6>Features:</h6>
+                  <ul>
+                    <li>Interactive calendar with FullCalendar</li>
+                    <li>Class booking system</li>
+                    <li>Admin management panel</li>
+                    <li>RESTful API endpoints</li>
+                    <li>Responsive Bootstrap design</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h6>Tech Stack:</h6>
+                  <ul>
+                    <li>PHP 7.4+ with PDO</li>
+                    <li>MySQL/MariaDB</li>
+                    <li>Bootstrap 5</li>
+                    <li>FullCalendar</li>
+                    <li>JavaScript</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-warning">
+            <strong>⚠️ Important Security Notes:</strong>
+            <ul class="mb-0">
+              <li>Change the default admin password after setup!</li>
+              <li>
+                Delete <code>setup_database.php</code> and
+                <code>test.php</code> before production
+              </li>
+              <li>
+                Review database credentials in <code>public/api/db.php</code>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
