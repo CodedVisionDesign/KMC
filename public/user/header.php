@@ -13,10 +13,10 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle ?? 'User Dashboard'; ?> - Class Booking System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/testbook/assets/css/custom.css" rel="stylesheet">
+    <title><?php echo $pageTitle ?? 'User Dashboard'; ?> - Elite Martial Arts Academy</title>
+    <link href="../assets/css/bootstrap-offline.css" rel="stylesheet">
+    <link href="../assets/css/fontawesome-offline.css" rel="stylesheet">
+    <link href="../assets/css/custom.css" rel="stylesheet">
     <style>
         .user-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -50,14 +50,41 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             justify-content: center;
             font-size: 1.2rem;
         }
+        .logo-img {
+            max-height: 50px;
+            width: auto;
+        }
+        .header-logo-section {
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
-    <!-- User Header -->
+    <!-- Header with Logo -->
     <div class="user-header">
         <div class="container">
+            <!-- Logo Section -->
+            <div class="header-logo-section">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <img src="../assets/images/logo.png" alt="Elite Martial Arts Academy" class="logo-img">
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="../index.php" class="btn btn-outline-light me-2">
+                            <i class="fas fa-calendar me-1"></i> Book Classes
+                        </a>
+                        <a href="../logout.php" class="btn btn-light">
+                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Welcome Section -->
             <div class="row align-items-center">
-                <div class="col-md-6">
+                <div class="col-12">
                     <div class="d-flex align-items-center">
                         <div class="profile-avatar me-3">
                             <i class="fas fa-user"></i>
@@ -67,14 +94,6 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                             <small class="opacity-75"><?php echo htmlspecialchars($userInfo['email']); ?></small>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <a href="../index.php" class="btn btn-outline-light me-2">
-                        <i class="fas fa-calendar me-1"></i> Book Classes
-                    </a>
-                    <a href="../logout.php" class="btn btn-light">
-                        <i class="fas fa-sign-out-alt me-1"></i> Logout
-                    </a>
                 </div>
             </div>
         </div>

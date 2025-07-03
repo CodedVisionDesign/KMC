@@ -1,0 +1,114 @@
+/* Minimal Font Awesome replacement for offline use */
+
+.fas,
+.fa {
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+  display: inline-block;
+  text-rendering: auto;
+}
+
+/* Basic icon styling */
+.fa-user::before {
+  content: "👤";
+}
+.fa-tachometer-alt::before {
+  content: "📊";
+}
+.fa-user-edit::before {
+  content: "✏️";
+}
+.fa-heartbeat::before {
+  content: "💓";
+}
+.fa-phone::before {
+  content: "📞";
+}
+.fa-calendar-check::before {
+  content: "📅";
+}
+.fa-calendar-plus::before {
+  content: "➕";
+}
+.fa-dumbbell::before {
+  content: "🏋️";
+}
+.fa-crown::before {
+  content: "👑";
+}
+.fa-gift::before {
+  content: "🎁";
+}
+.fa-exclamation-triangle::before {
+  content: "⚠️";
+}
+.fa-sign-out-alt::before {
+  content: "🚪";
+}
+.fa-clock::before {
+  content: "⏰";
+}
+.fa-calendar::before {
+  content: "📅";
+}
+.fa-user-tie::before {
+  content: "👔";
+}
+.fa-shield-alt::before {
+  content: "🛡️";
+}
+
+/* Alternative text-based icons */
+.fa-user::before {
+  content: "👤";
+}
+.fa-home::before {
+  content: "🏠";
+}
+.fa-cog::before {
+  content: "⚙️";
+}
+.fa-check::before {
+  content: "✓";
+}
+.fa-times::before {
+  content: "✕";
+}
+.fa-plus::before {
+  content: "+";
+}
+.fa-minus::before {
+  content: "-";
+}
+.fa-edit::before {
+  content: "✏️";
+}
+.fa-trash::before {
+  content: "🗑️";
+}
+.fa-search::before {
+  content: "🔍";
+}
+
+/* Size modifiers */
+.fa-2x {
+  font-size: 2em;
+}
+.fa-3x {
+  font-size: 3em;
+}
+
+/* Spacing utilities for icons */
+.me-1 {
+  margin-right: 0.25rem;
+}
+.me-2 {
+  margin-right: 0.5rem;
+}
+.ms-1 {
+  margin-left: 0.25rem;
+}
+.ms-2 {
+  margin-left: 0.5rem;
+}

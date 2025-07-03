@@ -267,6 +267,26 @@ $content .= <<<HTML
             </div>
         </div>
     </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card" style="background: linear-gradient(45deg, #fd7e14, #ffc107);">
+            <div class="card-body text-white">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">Trial System</h5>
+                        <h6>Manage User Trials</h6>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-gift fa-2x"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="trial_management.php" class="btn btn-light btn-sm">
+                        <i class="fas fa-cog me-1"></i>Manage Trials
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="row">
@@ -303,6 +323,11 @@ $content .= <<<HTML
                     <div class="col-md-6 mb-2">
                         <a href="bookings.php" class="btn btn-outline-success w-100">
                             <i class="fas fa-calendar-check me-2"></i>View Recent Bookings
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <a href="trial_management.php" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-gift me-2"></i>Trial Management
                         </a>
                     </div>
                 </div>

@@ -4,6 +4,11 @@ require_once '../api/db.php';
 require_once '../../config/user_auth.php';
 require_once '../../config/membership_functions.php';
 
+// Only include martial arts functions if we haven't already loaded the base functions to avoid conflicts
+if (file_exists('../../config/martial_arts_membership_functions.php') && !function_exists('canUserBookSpecificClass')) {
+    require_once '../../config/martial_arts_membership_functions.php';
+}
+
 // Check if user is logged in
 if (!isUserLoggedIn()) {
     header('Location: ../login.php');
@@ -16,7 +21,7 @@ $userId = $userInfo['id'];
 
 // Get user's current membership status
 $membershipStatus = getUserMembershipStatus($userId);
-$availablePlans = getAvailableMembershipPlans();
+$availablePlans = getAvailablePlansForUser($userId);
 
 // Handle membership purchase
 $message = '';
@@ -25,8 +30,9 @@ $messageType = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_plan'])) {
     $planId = (int)$_POST['plan_id'];
     
-    // Validate plan exists
+    // Validate plan exists and user can access it (age restrictions)
     $planExists = false;
+    $canAccess = false;
     foreach ($availablePlans as $plan) {
         if ($plan['id'] == $planId) {
             $planExists = true;
@@ -34,7 +40,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_plan'])) {
         }
     }
     
+    // Double-check age eligibility
     if ($planExists) {
+        $accessCheck = canUserAccessPlan($userId, $planId);
+        $canAccess = $accessCheck['canAccess'];
+        if (!$canAccess) {
+            $message = "Age restriction: " . $accessCheck['reason'];
+            $messageType = "error";
+        }
+    }
+    
+    if ($planExists && $canAccess) {
         // Create membership (admin will need to confirm payment)
         try {
             $membershipId = createUserMembership($userId, $planId);
@@ -53,10 +69,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['purchase_plan'])) {
             $message = $e->getMessage();
             $messageType = "error";
         }
-    } else {
+    } else if (!$planExists) {
         $message = "Invalid membership plan selected.";
         $messageType = "error";
     }
+    // Age restriction error message already set above
 }
 
 // Include the layout configuration
@@ -160,7 +177,9 @@ HTML;
     // Check payment status for active membership
     $pdo = connectUserDB();
     $stmt = $pdo->prepare("
-        SELECT um.*, mp.name as plan_name, mp.price 
+        SELECT um.*, mp.name as plan_name, mp.price, mp.gocardless_url, 
+               mp.bank_account_name, mp.bank_sort_code, mp.bank_account_number,
+               mp.gocardless_visible, mp.bank_details_visible
         FROM user_memberships um 
         JOIN membership_plans mp ON um.plan_id = mp.id 
         WHERE um.user_id = ? AND um.status = 'active'
@@ -202,7 +221,7 @@ HTML;
                                 <li>Easy to cancel or modify</li>
                             </ul>
                         </div>
-                        <a href="#" class="btn btn-primary">
+                        <a href="{$currentMembership['gocardless_url']}" class="btn btn-primary" target="_blank">
                             <i class="fas fa-credit-card me-2"></i>Set Up Direct Debit
                         </a>
                     </div>
@@ -225,9 +244,9 @@ HTML;
                             <div class="col-md-6">
                                 <h6>Bank Details:</h6>
                                 <table class="table table-sm">
-                                    <tr><td><strong>Account Name:</strong></td><td>Fitness Studio Ltd</td></tr>
-                                    <tr><td><strong>Sort Code:</strong></td><td>12-34-56</td></tr>
-                                    <tr><td><strong>Account Number:</strong></td><td>12345678</td></tr>
+                                    <tr><td><strong>Account Name:</strong></td><td>{$currentMembership['bank_account_name']}</td></tr>
+                                    <tr><td><strong>Sort Code:</strong></td><td>{$currentMembership['bank_sort_code']}</td></tr>
+                                    <tr><td><strong>Account Number:</strong></td><td>{$currentMembership['bank_account_number']}</td></tr>
                                     <tr><td><strong>Reference:</strong></td><td>MEMBER-{$userId}</td></tr>
                                 </table>
                             </div>
@@ -472,10 +491,12 @@ HTML;
 // Check if user has any approved memberships with payment options enabled
 try {
     $stmt = $pdo->prepare("
-        SELECT gocardless_visible, bank_details_visible, status 
-        FROM user_memberships 
-        WHERE user_id = ? AND status IN ('pending', 'approved') 
-        ORDER BY created_at DESC 
+        SELECT um.gocardless_visible, um.bank_details_visible, um.status,
+               mp.gocardless_url, mp.bank_account_name, mp.bank_sort_code, mp.bank_account_number, mp.price
+        FROM user_memberships um
+        JOIN membership_plans mp ON um.plan_id = mp.id
+        WHERE um.user_id = ? AND um.status IN ('pending', 'approved') 
+        ORDER BY um.created_at DESC 
         LIMIT 1
     ");
     $stmt->execute([$userId]);
@@ -504,7 +525,7 @@ HTML;
                                 <li>Cancel anytime with 30 days notice</li>
                                 <li>Protected by the Direct Debit Guarantee</li>
                             </ul>
-                            <a href="#" class="btn btn-primary" onclick="alert('GoCardless integration would be implemented here')">
+                            <a href="{$paymentAccess['gocardless_url']}" class="btn btn-primary" target="_blank">
                                 <i class="fas fa-external-link-alt me-2"></i>Set Up Direct Debit
                             </a>
                         </div>
@@ -522,13 +543,13 @@ HTML;
                             <p class="mb-2">Transfer payment directly to our bank account:</p>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p><strong>Account Name:</strong> Fitness Studio Ltd</p>
-                                    <p><strong>Sort Code:</strong> 12-34-56</p>
-                                    <p><strong>Account Number:</strong> 12345678</p>
+                                    <p><strong>Account Name:</strong> {$paymentAccess['bank_account_name']}</p>
+                                    <p><strong>Sort Code:</strong> {$paymentAccess['bank_sort_code']}</p>
+                                    <p><strong>Account Number:</strong> {$paymentAccess['bank_account_number']}</p>
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>Reference:</strong> Your name + membership</p>
-                                    <p><strong>Amount:</strong> As per your selected plan</p>
+                                    <p><strong>Amount:</strong> £{$paymentAccess['price']}</p>
                                 </div>
                             </div>
                             <div class="alert alert-warning">

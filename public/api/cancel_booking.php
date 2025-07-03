@@ -1,4 +1,13 @@
 <?php
+// Start output buffering to prevent any unwanted output
+ob_start();
+
+// Disable HTML error display for API endpoints
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+
+// Clean any buffered output and set JSON header
+ob_clean();
 header('Content-Type: application/json');
 
 // Create database connection directly

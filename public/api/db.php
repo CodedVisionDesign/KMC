@@ -13,6 +13,19 @@ $options = [
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
+function getDBConnection() {
+    global $host, $db, $user, $pass, $charset, $options;
+    
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    
+    try {
+        return new PDO($dsn, $user, $pass, $options);
+    } catch (PDOException $e) {
+        error_log('Database connection failed: ' . $e->getMessage());
+        throw new Exception('Database connection failed');
+    }
+}
+
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (PDOException $e) {

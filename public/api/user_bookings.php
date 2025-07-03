@@ -1,7 +1,16 @@
 <?php
+// Start output buffering to prevent any unwanted output
+ob_start();
+
+// Disable HTML error display for API endpoints
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+
 // Include error handling configuration first
 require_once __DIR__ . '/../../config/error_handling.php';
 
+// Clean any buffered output and set JSON header
+ob_clean();
 header('Content-Type: application/json');
 
 // Create database connection directly
@@ -64,7 +73,7 @@ error_log("User Bookings API - User ID: $userId, Email: " . $userInfo['email']);
 try {
     // Get all user bookings
     $stmt = $pdo->prepare('
-        SELECT b.id, b.class_id, b.booking_date, b.status,
+        SELECT b.id, b.class_id, b.created_at as booking_date, b.status,
                c.name as class_name, c.date as class_date, c.time as class_time
         FROM bookings b
         JOIN classes c ON b.class_id = c.id

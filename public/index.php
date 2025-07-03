@@ -10,6 +10,23 @@ if (file_exists(__DIR__ . '/../templates/config.php')) {
 // Database connection
 require_once __DIR__ . '/api/db.php';
 
+// Include user authentication functions
+if (file_exists(__DIR__ . '/../config/user_auth.php')) {
+    require_once __DIR__ . '/../config/user_auth.php';
+}
+
+// Check if user is logged in first
+$isLoggedIn = false;
+$userName = '';
+$userId = 0;
+
+if (function_exists('isUserLoggedIn') && isUserLoggedIn()) {
+    $isLoggedIn = true;
+    $userInfo = getUserInfo();
+    $userName = $userInfo['first_name'] ?? 'User';
+    $userId = $userInfo['id'] ?? 0;
+}
+
 // Include file upload helper for profile photos
 if (file_exists(__DIR__ . '/../config/file_upload_helper.php')) {
     include __DIR__ . '/../config/file_upload_helper.php';
@@ -49,44 +66,54 @@ try {
 // Fetch unique classes from database for informational display (no duplicates)
 // This shows the types of classes available, not individual instances
 $classes = [];
+
+// Include martial arts functions for age-based filtering
+if (file_exists(__DIR__ . '/../config/martial_arts_membership_functions.php')) {
+    require_once __DIR__ . '/../config/martial_arts_membership_functions.php';
+}
+
 try {
+    // Show all specified classes regardless of user login status or age on the main page
     $stmt = $pdo->query("
         SELECT 
             CASE 
-                WHEN c.name LIKE 'Private 1-1%' THEN 'Private 1-1 Tuition'
                 WHEN c.name LIKE 'Adult Advanced%' THEN 'Adult Advanced'
                 WHEN c.name LIKE 'Adult Fundamentals%' THEN 'Adult Fundamentals'
-                WHEN c.name LIKE 'Adults Any Level%' THEN 'Adults Any Level'
-                WHEN c.name LIKE 'Adults Bag Work%' THEN 'Adults Bag Work / Open Mat'
-                WHEN c.name LIKE 'Adults Sparring%' THEN 'Adults Sparring'
+                WHEN c.name LIKE 'Adults Bag Work%' THEN 'Adults Open Mat'
                 WHEN c.name LIKE 'Infants%' THEN 'Infants'
                 WHEN c.name LIKE 'Juniors%' THEN 'Juniors'
                 WHEN c.name LIKE 'Seniors%' THEN 'Seniors'
-                ELSE c.name
+                ELSE NULL
             END as unique_name,
-            c.description, 
-            c.capacity, 
-            c.age_min, 
-            c.age_max, 
-            c.trial_eligible,
-            c.difficulty_level,
-            CONCAT(i.first_name, ' ', i.last_name) as instructor_name,
-            i.email as instructor_email
+            MAX(c.description) as description, 
+            MAX(c.capacity) as capacity, 
+            MIN(c.age_min) as age_min, 
+            MAX(c.age_max) as age_max, 
+            MAX(c.trial_eligible) as trial_eligible,
+            MAX(c.difficulty_level) as difficulty_level,
+            MAX(CONCAT(i.first_name, ' ', i.last_name)) as instructor_name,
+            MAX(i.email) as instructor_email
         FROM classes c 
         LEFT JOIN instructors i ON c.instructor_id = i.id 
         WHERE c.recurring = 1
+        AND (
+            c.name LIKE 'Adult Advanced%' OR
+            c.name LIKE 'Adult Fundamentals%' OR
+            c.name LIKE 'Adults Bag Work%' OR
+            c.name LIKE 'Infants%' OR
+            c.name LIKE 'Juniors%' OR
+            c.name LIKE 'Seniors%'
+        )
         GROUP BY unique_name
+        HAVING unique_name IS NOT NULL
         ORDER BY 
             CASE unique_name
-                WHEN 'Private 1-1 Tuition' THEN 1
-                WHEN 'Infants' THEN 2
-                WHEN 'Juniors' THEN 3
-                WHEN 'Seniors' THEN 4
-                WHEN 'Adult Fundamentals' THEN 5
-                WHEN 'Adults Any Level' THEN 6
-                WHEN 'Adult Advanced' THEN 7
-                WHEN 'Adults Bag Work / Open Mat' THEN 8
-                WHEN 'Adults Sparring' THEN 9
+                WHEN 'Infants' THEN 1
+                WHEN 'Juniors' THEN 2
+                WHEN 'Seniors' THEN 3
+                WHEN 'Adult Fundamentals' THEN 4
+                WHEN 'Adult Advanced' THEN 5
+                WHEN 'Adults Open Mat' THEN 6
                 ELSE 10
             END
     ");
@@ -95,15 +122,12 @@ try {
     // Function to get class image filename
     function getClassImageName($className) {
         $imageMap = [
-            'Private 1-1 Tuition' => 'private-tuition.jpg',
             'Adult Advanced' => 'adult-advanced.jpg',
             'Adult Fundamentals' => 'adult-fundamentals.jpg',
-            'Adults Any Level' => 'adults-any-level.jpg',
-            'Adults Bag Work / Open Mat' => 'adults-bag-work.jpg',
-            'Adults Sparring' => 'adults-sparring.jpg',
-            'Infants' => 'infants.jpg',
-            'Juniors' => 'juniors.jpg',
-            'Seniors' => 'seniors.jpg'
+            'Adults Open Mat' => 'adult-fundamentals.jpg', // Using as placeholder until specific image is added
+            'Infants' => 'infants.webp',
+            'Juniors' => 'juniors.webp',
+            'Seniors' => 'seniors.webp'
         ];
         return $imageMap[$className] ?? 'default-class.jpg';
     }
@@ -128,6 +152,8 @@ try {
         $class['trial_text'] = $class['trial_eligible'] ? 'Trial Available' : 'No Trial Available';
         $class['trial_class'] = $class['trial_eligible'] ? 'text-success' : 'text-warning';
     }
+    // Clear the reference to avoid issues
+    unset($class);
     
 } catch (PDOException $e) {
     error_log('Error fetching classes: ' . $e->getMessage());
@@ -154,22 +180,7 @@ setupPageConfig([
     ]
 ]);
 
-// Check if user is logged in to show personalized content
-$isLoggedIn = false;
-$userName = '';
-$userId = 0;
-
-// Include user authentication functions
-if (file_exists(__DIR__ . '/../config/user_auth.php')) {
-    require_once __DIR__ . '/../config/user_auth.php';
-}
-
-if (function_exists('isUserLoggedIn') && isUserLoggedIn()) {
-    $isLoggedIn = true;
-    $userInfo = getUserInfo();
-    $userName = $userInfo['first_name'] ?? 'User';
-    $userId = $userInfo['id'] ?? 0;
-}
+// Authentication check already done above
 
 $content = '';
 
@@ -308,11 +319,86 @@ if (empty($membershipPlans)) {
             </div>
 HTML;
 } else {
+    // Group membership plans
+    $seniorPlans = [];
+    $juniorPlans = [];
+    $otherPlans = [];
+    
     foreach ($membershipPlans as $plan) {
+        if (stripos($plan['name'], 'Senior') !== false && stripos($plan['name'], 'Sparring') === false) {
+            $seniorPlans[] = $plan;
+        } elseif (stripos($plan['name'], 'Junior') !== false) {
+            $juniorPlans[] = $plan;
+        } else {
+            $otherPlans[] = $plan;
+        }
+    }
+    
+    // Function to create combined card
+    function createCombinedCard($plans, $title, $badgeText, $badgeClass, $cardClass, $ageRange) {
+        if (empty($plans)) return '';
+        
+        $html = <<<HTML
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 {$cardClass} position-relative">
+                    <div class="position-absolute top-0 start-50 translate-middle">
+                        <span class="badge {$badgeClass} px-3 py-2">{$badgeText}</span>
+                    </div>
+                    <div class="card-body text-center pt-4">
+                        <h5 class="card-title text-primary mb-3">{$title}</h5>
+                        <p class="text-muted mb-3"><strong>Age Range:</strong> {$ageRange}</p>
+                        
+                        <div class="row">
+HTML;
+        
+        foreach ($plans as $index => $plan) {
+            $price = number_format($plan['price'], 2);
+            $classLimit = $plan['monthly_class_limit'] ? $plan['monthly_class_limit'] . ' classes/week' : 'Unlimited classes';
+            $planType = stripos($plan['name'], 'Basic') !== false ? 'Basic' : 'Unlimited';
+            $colClass = count($plans) == 2 ? 'col-6' : 'col-12';
+            
+            $html .= <<<HTML
+                            <div class="{$colClass} mb-3">
+                                <div class="border rounded p-3 h-100" style="background: rgba(0,123,255,0.05);">
+                                    <h6 class="text-primary fw-bold">{$planType}</h6>
+                                    <div class="mb-2">
+                                        <span class="h4 text-dark">£{$price}</span>
+                                        <span class="text-muted">/month</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block">{$classLimit}</small>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-center mb-1">
+                                        <i class="fas fa-check text-success me-1"></i>
+                                        <small>All class types</small>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-center mb-1">
+                                        <i class="fas fa-check text-success me-1"></i>
+                                        <small>Online booking</small>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-check text-success me-1"></i>
+                                        <small>Flexible scheduling</small>
+                                    </div>
+                                </div>
+                            </div>
+HTML;
+        }
+        
+        $html .= <<<HTML
+                        </div>
+                    </div>
+                </div>
+            </div>
+HTML;
+        
+        return $html;
+    }
+    
+    // Function to create single card
+    function createSingleCard($plan) {
         $price = number_format($plan['price'], 2);
         $classLimit = $plan['monthly_class_limit'] ? $plan['monthly_class_limit'] . ' classes' : 'Unlimited classes';
-        // Note: features column doesn't exist in current schema, using default features
-        $features = [];
         
         // Determine card styling based on plan type
         $cardClass = '';
@@ -323,7 +409,7 @@ HTML;
             $cardClass = 'border-success';
             $badgeClass = 'bg-success';
             $badgeText = 'Free Trial';
-        } elseif (stripos($plan['name'], 'premium') !== false || stripos($plan['name'], 'unlimited') !== false) {
+        } elseif (stripos($plan['name'], 'unlimited') !== false) {
             $cardClass = 'border-warning';
             $badgeClass = 'bg-warning text-dark';
             $badgeText = 'Most Popular';
@@ -331,26 +417,30 @@ HTML;
             $cardClass = 'border-primary';
             $badgeClass = 'bg-primary';
             $badgeText = 'Great Start';
+        } elseif (stripos($plan['name'], 'infant') !== false) {
+            $cardClass = 'border-info';
+            $badgeClass = 'bg-info';
+            $badgeText = 'Ages 4-6';
         } else {
             $cardClass = 'border-secondary';
             $badgeClass = 'bg-secondary';
             $badgeText = 'Good Value';
         }
         
-        $content .= <<<HTML
-            <div class="col-md-6 col-lg-3 mb-4">
+        $html = <<<HTML
+            <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100 {$cardClass} position-relative">
 HTML;
         
         if ($badgeText) {
-            $content .= <<<HTML
+            $html .= <<<HTML
                     <div class="position-absolute top-0 start-50 translate-middle">
                         <span class="badge {$badgeClass} px-3 py-2">{$badgeText}</span>
                     </div>
 HTML;
         }
         
-        $content .= <<<HTML
+        $html .= <<<HTML
                     <div class="card-body text-center pt-4">
                         <h5 class="card-title text-primary">{$plan['name']}</h5>
                         <div class="mb-3">
@@ -361,34 +451,8 @@ HTML;
                         <div class="mb-3">
                             <div class="d-flex align-items-center justify-content-center mb-2">
                                 <i class="fas fa-dumbbell text-primary me-2"></i>
-                                <strong>{$classLimit} per month</strong>
+                                <strong>{$classLimit}</strong>
                             </div>
-HTML;
-        
-        if (!empty($features) && is_array($features)) {
-            foreach ($features as $feature) {
-                $content .= <<<HTML
-                            <div class="d-flex align-items-center justify-content-center mb-1">
-                                <i class="fas fa-check text-success me-2"></i>
-                                <small>{$feature}</small>
-                            </div>
-HTML;
-            }
-        } else {
-            // Default features based on plan type
-            if (stripos($plan['name'], 'free') !== false || stripos($plan['name'], 'trial') !== false) {
-                $content .= <<<HTML
-                            <div class="d-flex align-items-center justify-content-center mb-1">
-                                <i class="fas fa-check text-success me-2"></i>
-                                <small>Try before you commit</small>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-center mb-1">
-                                <i class="fas fa-check text-success me-2"></i>
-                                <small>Access to all class types</small>
-                            </div>
-HTML;
-            } else {
-                $content .= <<<HTML
                             <div class="d-flex align-items-center justify-content-center mb-1">
                                 <i class="fas fa-check text-success me-2"></i>
                                 <small>Access to all class types</small>
@@ -401,16 +465,28 @@ HTML;
                                 <i class="fas fa-check text-success me-2"></i>
                                 <small>Flexible scheduling</small>
                             </div>
-HTML;
-            }
-        }
-        
-        $content .= <<<HTML
                         </div>
                     </div>
                 </div>
             </div>
 HTML;
+        
+        return $html;
+    }
+    
+    // Create combined Senior card
+    if (!empty($seniorPlans)) {
+        $content .= createCombinedCard($seniorPlans, 'Senior School Membership', 'Ages 11-15', 'bg-info', 'border-info', '11-15 years');
+    }
+    
+    // Create combined Junior card
+    if (!empty($juniorPlans)) {
+        $content .= createCombinedCard($juniorPlans, 'Junior Membership', 'Ages 7-11', 'bg-success', 'border-success', '7-11 years');
+    }
+    
+    // Create individual cards for other plans
+    foreach ($otherPlans as $plan) {
+        $content .= createSingleCard($plan);
     }
 }
 
@@ -459,17 +535,20 @@ HTML;
         if (!$imageExists) {
             // Create a CSS-based placeholder with class name
             $imageHtml = <<<HTML
-<div class="class-image-placeholder d-flex align-items-center justify-content-center text-white fw-bold" 
-     style="height: 200px; background: linear-gradient(45deg, #007bff, #0056b3); font-size: 1.1rem; text-align: center;">
-    <div>
-        <i class="fas fa-fist-raised fa-2x mb-2"></i><br>
-        {$class['name']}
+<div class="class-image-container">
+    <div class="class-image-placeholder d-flex align-items-center justify-content-center text-white fw-bold">
+        <div>
+            <i class="fas fa-fist-raised fa-2x mb-2"></i><br>
+            {$class['name']}
+        </div>
     </div>
 </div>
 HTML;
         } else {
             $imageHtml = <<<HTML
-<img src="{$imagePath}" class="card-img-top" alt="{$class['name']}" style="height: 200px; object-fit: cover;">
+<div class="class-image-container">
+    <img src="{$imagePath}" class="card-img-top" alt="{$class['name']}" loading="lazy">
+</div>
 HTML;
         }
         
@@ -846,6 +925,21 @@ $content .= <<<HTML
       </div>
       <div class="modal-body" id="classModalBody">
         <!-- Class details and booking form will be loaded here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for time slot selection -->
+<div class="modal fade" id="timeSlotModal" tabindex="-1" aria-labelledby="timeSlotModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="timeSlotModalLabel">Select Time Slots</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="timeSlotModalBody">
+        <!-- Time slot selection will be loaded here -->
       </div>
     </div>
   </div>

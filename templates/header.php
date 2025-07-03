@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($pageTitle) ? $pageTitle : 'Class Booking System'; ?></title>
+    <title><?php echo isset($pageTitle) ? $pageTitle : 'Elite Martial Arts Academy'; ?></title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
@@ -23,13 +23,24 @@
     <?php if (isset($additionalHead)): ?>
         <?php echo $additionalHead; ?>
     <?php endif; ?>
+    
+    <style>
+        .logo-img {
+            max-height: 60px;
+            width: auto;
+        }
+        .navbar-brand .logo-img {
+            max-height: 40px;
+        }
+    </style>
 </head>
 <body class="<?php echo isset($bodyClass) ? $bodyClass : ''; ?>">
     <header class="bg-primary text-white p-3 mb-4">
         <div class="container">
-            <h1><?php echo isset($siteTitle) ? $siteTitle : 'Class Booking System'; ?></h1>
             <nav class="navbar navbar-expand-lg navbar-dark">
-                <a class="navbar-brand" href="<?php echo isset($homeUrl) ? $homeUrl : 'index.php'; ?>">Home</a>
+                <a class="navbar-brand d-flex align-items-center" href="<?php echo isset($homeUrl) ? $homeUrl : 'index.php'; ?>">
+                    <img src="<?php echo isset($logoPath) ? $logoPath : '../assets/images/logo.png'; ?>" alt="Home" class="logo-img me-2">
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>

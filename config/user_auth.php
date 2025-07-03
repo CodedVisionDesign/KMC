@@ -91,6 +91,7 @@ function loginUser($email, $password) {
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
         $_SESSION['user_first_name'] = $user['first_name'];
+        $_SESSION['user_last_name'] = $user['last_name'];
         
         return $user;
     } catch (PDOException $e) {
@@ -122,11 +123,37 @@ function getUserInfo() {
         return null;
     }
     
+    // Get fresh user data from database instead of relying on session
+    try {
+        $pdo = connectUserDB();
+        $stmt = $pdo->prepare("
+            SELECT id, first_name, last_name, email, phone, date_of_birth, gender, status 
+            FROM users 
+            WHERE id = ? AND status = 'active'
+        ");
+        $stmt->execute([$_SESSION['user_id']]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user) {
+            // Update session with fresh data
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
+            $_SESSION['user_first_name'] = $user['first_name'];
+            $_SESSION['user_last_name'] = $user['last_name'];
+            
+            return $user;
+        }
+    } catch (Exception $e) {
+        error_log('Error getting user info: ' . $e->getMessage());
+    }
+    
+    // Fallback to session data (but add last_name handling)
     return [
         'id' => $_SESSION['user_id'],
         'email' => $_SESSION['user_email'],
         'name' => $_SESSION['user_name'],
-        'first_name' => $_SESSION['user_first_name']
+        'first_name' => $_SESSION['user_first_name'],
+        'last_name' => $_SESSION['user_last_name'] ?? ''
     ];
 }
 

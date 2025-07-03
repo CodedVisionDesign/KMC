@@ -1,9 +1,14 @@
 <?php
-// Disable error display to prevent HTML output in JSON API
+// Start output buffering to prevent any unwanted output
+ob_start();
+
+// Disable HTML error display for API endpoints
 ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
 error_reporting(0);
 
-// Set JSON header first to ensure proper response format
+// Clean any buffered output and set JSON header
+ob_clean();
 header('Content-Type: application/json');
 
 // Include error handling configuration
@@ -65,7 +70,11 @@ try {
                 i.specialties as instructor_specialties
             FROM classes c 
             LEFT JOIN instructors i ON c.instructor_id = i.id
-            WHERE c.date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) OR c.recurring = 1
+            WHERE (
+                (c.date > CURDATE()) OR 
+                (c.date = CURDATE() AND c.time > CURTIME()) OR 
+                c.recurring = 1
+            )
             ORDER BY c.date, c.time
         ');
         $allClasses = $stmt->fetchAll();
@@ -107,16 +116,20 @@ try {
                         // Generate weekly instances for this day
                         while ($currentDate <= $endDate) {
                             if ($currentDate >= $startDate) {
-                                $instanceClass = $class;
-                                $instanceClass['date'] = $currentDate->format('Y-m-d');
-                                $instanceClass['generated_id'] = $class['id'] . '_' . $currentDate->format('Y-m-d');
-                                
                                 // Use day-specific time if available, otherwise use default time
-                                if (isset($daySpecificTimes[$dayName])) {
-                                    $instanceClass['time'] = $daySpecificTimes[$dayName];
-                                }
+                                $classTime = isset($daySpecificTimes[$dayName]) ? $daySpecificTimes[$dayName] : $class['time'];
                                 
-                                $processedClasses[] = $instanceClass;
+                                // *** ONLY ADD FUTURE CLASSES (CHECK DATE + TIME) ***
+                                $instanceDateTime = new DateTime($currentDate->format('Y-m-d') . ' ' . $classTime);
+                                $now = new DateTime();
+                                
+                                if ($instanceDateTime > $now) {
+                                    $instanceClass = $class;
+                                    $instanceClass['date'] = $currentDate->format('Y-m-d');
+                                    $instanceClass['time'] = $classTime;
+                                    $instanceClass['generated_id'] = $class['id'] . '_' . $currentDate->format('Y-m-d');
+                                    $processedClasses[] = $instanceClass;
+                                }
                             }
                             
                             // Move to next week
@@ -140,22 +153,31 @@ try {
                     
                     $currentDate->add(new DateInterval('P' . $daysToAdd . 'D'));
                     
-                    // Generate instances from 1 month ago to 3 months ahead
-                    while ($currentDate <= $endDate) {
-                        if ($currentDate >= $startDate) {
-                            $instanceClass = $class;
-                            $instanceClass['date'] = $currentDate->format('Y-m-d');
-                            $instanceClass['generated_id'] = $class['id'] . '_' . $currentDate->format('Y-m-d');
-                            $processedClasses[] = $instanceClass;
+                                            // Generate instances from current date to 3 months ahead
+                        $now = new DateTime();
+                        while ($currentDate <= $endDate) {
+                            if ($currentDate >= $startDate) {
+                                // Check if this specific instance is in the future
+                                $instanceDateTime = new DateTime($currentDate->format('Y-m-d') . ' ' . $class['time']);
+                                
+                                if ($instanceDateTime > $now) {
+                                    $instanceClass = $class;
+                                    $instanceClass['date'] = $currentDate->format('Y-m-d');
+                                    $instanceClass['generated_id'] = $class['id'] . '_' . $currentDate->format('Y-m-d');
+                                    $processedClasses[] = $instanceClass;
+                                }
+                            }
+                            
+                            // Move to next week
+                            $currentDate->add(new DateInterval('P7D'));
                         }
-                        
-                        // Move to next week
-                        $currentDate->add(new DateInterval('P7D'));
-                    }
                 }
             } else {
-                // Non-recurring class, add if it's within our date range (1 month back to future)
-                if ($class['date'] >= $startDate->format('Y-m-d')) {
+                // Non-recurring class, add only if it's in the future
+                $classDateTime = new DateTime($class['date'] . ' ' . $class['time']);
+                $now = new DateTime();
+                
+                if ($classDateTime > $now) {
                     $processedClasses[] = $class;
                 }
             }
@@ -198,6 +220,13 @@ try {
                 $classes[] = $class;
             }
         }
+        
+        // *** FINAL SAFETY FILTER: Remove any past classes that might have slipped through ***
+        $now = new DateTime();
+        $classes = array_filter($classes, function($class) use ($now) {
+            $classDateTime = new DateTime($class['date'] . ' ' . $class['time']);
+            return $classDateTime > $now;
+        });
         
         // Sort by date and time
         usort($classes, function($a, $b) {

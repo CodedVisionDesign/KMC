@@ -89,60 +89,107 @@ function getUserMonthlyClassCount($userId, $yearMonth = null) {
 }
 
 /**
- * Check if user can book a class
+ * Check if user can book a class (OPTIMIZED - single query)
  */
 function canUserBookClass($userId) {
-    $hasUsedTrial = hasUserUsedFreeTrial($userId);
-    
-    // If hasn't used free trial, they can book
-    if (!$hasUsedTrial) {
+    try {
+        $pdo = connectUserDB();
+        $currentMonth = date('Y-m');
+        
+        // OPTIMIZED: Single query to get all needed data
+        $stmt = $pdo->prepare("
+            SELECT 
+                u.free_trial_used,
+                um.id as membership_id,
+                mp.name as plan_name,
+                mp.monthly_class_limit,
+                COUNT(b.id) as monthly_bookings
+            FROM users u
+            LEFT JOIN user_memberships um ON u.id = um.user_id 
+                AND um.status = 'active'
+                AND um.start_date <= CURDATE()
+                AND um.end_date >= CURDATE()
+            LEFT JOIN membership_plans mp ON um.plan_id = mp.id
+            LEFT JOIN bookings b ON u.id = b.user_id
+                AND DATE_FORMAT(
+                    COALESCE(
+                        (SELECT c.date FROM classes c WHERE c.id = b.class_id LIMIT 1),
+                        CURDATE()
+                    ), '%Y-%m'
+                ) = ?
+            WHERE u.id = ?
+            GROUP BY u.id, um.id, mp.id
+            ORDER BY um.end_date DESC
+            LIMIT 1
+        ");
+        
+        $stmt->execute([$currentMonth, $userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$result) {
+            return [
+                'canBook' => false,
+                'reason' => 'user_not_found',
+                'message' => 'User not found.'
+            ];
+        }
+        
+        // Check free trial first
+        if (!$result['free_trial_used']) {
+            return [
+                'canBook' => true,
+                'reason' => 'free_trial',
+                'message' => 'You can book your free trial class!'
+            ];
+        }
+        
+        // Check for active membership
+        if (!$result['membership_id']) {
+            return [
+                'canBook' => false,
+                'reason' => 'no_membership',
+                'message' => 'You need to purchase a membership to book classes.'
+            ];
+        }
+        
+        // If unlimited plan
+        if ($result['monthly_class_limit'] === null) {
+            return [
+                'canBook' => true,
+                'reason' => 'unlimited',
+                'message' => 'You can book unlimited classes!'
+            ];
+        }
+        
+        // Check monthly limit
+        $classCount = (int)$result['monthly_bookings'];
+        if ($classCount >= $result['monthly_class_limit']) {
+            return [
+                'canBook' => false,
+                'reason' => 'limit_reached',
+                'message' => 'You have reached your monthly class limit (' . $result['monthly_class_limit'] . ' classes).',
+                'current_count' => $classCount,
+                'limit' => $result['monthly_class_limit']
+            ];
+        }
+        
         return [
             'canBook' => true,
-            'reason' => 'free_trial',
-            'message' => 'You can book your free trial class!'
-        ];
-    }
-    
-    // Check for active membership
-    $membership = getUserActiveMembership($userId);
-    if (!$membership) {
-        return [
-            'canBook' => false,
-            'reason' => 'no_membership',
-            'message' => 'You need to purchase a membership to book classes.'
-        ];
-    }
-    
-    // If unlimited plan
-    if ($membership['monthly_class_limit'] === null) {
-        return [
-            'canBook' => true,
-            'reason' => 'unlimited',
-            'message' => 'You can book unlimited classes!'
-        ];
-    }
-    
-    // Check monthly limit
-    $currentMonth = date('Y-m');
-    $classCount = getUserMonthlyClassCount($userId, $currentMonth);
-    
-    if ($classCount >= $membership['monthly_class_limit']) {
-        return [
-            'canBook' => false,
-            'reason' => 'limit_reached',
-            'message' => 'You have reached your monthly class limit (' . $membership['monthly_class_limit'] . ' classes).',
+            'reason' => 'membership_valid',
+            'message' => 'You can book classes! (' . $classCount . '/' . $result['monthly_class_limit'] . ' used this month)',
             'current_count' => $classCount,
-            'limit' => $membership['monthly_class_limit']
+            'limit' => $result['monthly_class_limit'],
+            'period' => 'month'
+        ];
+        
+    } catch (Exception $e) {
+        error_log('Error checking if user can book class: ' . $e->getMessage());
+        return [
+            'canBook' => false,
+            'reason' => 'error',
+            'message' => 'Unable to verify membership status.'
         ];
     }
-    
-    return [
-        'canBook' => true,
-        'reason' => 'membership_valid',
-        'message' => 'You can book classes! (' . $classCount . '/' . $membership['monthly_class_limit'] . ' used this month)',
-        'current_count' => $classCount,
-        'limit' => $membership['monthly_class_limit']
-    ];
 }
 
 /**

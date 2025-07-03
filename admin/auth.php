@@ -10,4 +10,8 @@ function requireAdmin() {
 
 function isAdmin() {
     return isset($_SESSION['admin_id']);
+}
+
+function getCurrentAdminId() {
+    return $_SESSION['admin_id'] ?? null;
 } 
